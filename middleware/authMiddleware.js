@@ -5,7 +5,6 @@ const jwtSecret = process.env.JWT_SECRET;
 
 const isLogin = async (req, res, next) => {
   const { accessToken } = req.signedCookies;
-  console.log(accessToken);
 
   if (accessToken) {
     try {
@@ -27,7 +26,6 @@ const isLogin = async (req, res, next) => {
 };
 
 const isAdmin = async (req, res, next) => {
-  console.log(req.user);
   if (req.user && req.user.isAdmin) {
     next();
   } else {

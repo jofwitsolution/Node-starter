@@ -75,4 +75,18 @@ const updateUser = async (req, res) => {
   res.status(200).json({ user, msg: "Updated successfully" });
 };
 
-export { getUser, getAllUsers, updateUser, adminGetUser };
+// @description: Admin delete user account
+// @Method: DELETE
+// @Endpoint: api/users/:id
+// @AccessType: private/admin
+const adminDeleteUser = async (req, res) => {
+  const user = await User.findByIdAndDelete(req.user._id);
+
+  if (!user) {
+    return res.status(400).json({ msg: "User doesn't exist" });
+  }
+
+  res.status(200).json({ msg: "User deleted" });
+};
+
+export { getUser, getAllUsers, updateUser, adminGetUser, adminDeleteUser };
