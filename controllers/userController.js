@@ -1,27 +1,78 @@
-import User from "../models/User";
+import User from "../models/User.js";
 
-// @description: User activate
+// @description: Get all users
 // @Method: GET
-// @Endpoint: api/auth/activate/:activationToken
-// @AccessType: public
-// @AccessType: public
-const activate = async (req, res) => {
-  const activationToken = req.params.activationToken;
+// @Endpoint: api/users
+// @AccessType: private
+const getAllUsers = async (req, res) => {
+  const users = await User.find({}).select("-password");
 
-  const user = await User.findOne({ activationToken });
-  if (!user) {
-    return res.status(400).json({ msg: "Invalid activation token" });
-  }
-
-  if (Date.now() > user.activationTokenExpires) {
-    return res.status(400).json({ msg: "Activation token expired" });
-  }
-
-  user.isActivate = true;
-  user.activationToken = undefined;
-  user.activationTokenExpires = undefined;
-
-  await user.save();
-
-  res.status(200).json({ msg: "Account activated successfully" });
+  res.status(200).json({ users });
 };
+
+// @description: Admin get user
+// @Method: GET
+// @Endpoint: api/users/:id
+// @AccessType: private/admin
+const adminGetUser = async (req, res) => {
+  const id = req.params.id;
+
+  const user = await User.findById(id).select("-password");
+  if (!user) {
+    return res.status(404).json({ msg: "User not found" });
+  }
+
+  res.status(200).json({ user });
+};
+
+// @description: User get profile
+// @Method: GET
+// @Endpoint: api/users/profile
+// @AccessType: private
+const getUser = async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
+  if (!user) {
+    return res.status(404).json({ msg: "User not found" });
+  }
+
+  res.status(200).json({ user });
+};
+
+// @description: Update profile
+// @Method: PUT
+// @Endpoint: api/users/:id
+// @AccessType: private
+const updateUser = async (req, res) => {
+  const id = req.params.id;
+
+  // validate the body of the req
+
+  const { firstName, lastName } = req.body;
+
+  if (req.user._id.toString() !== id) {
+    return res.status(400).json({ msg: "Id do not match" });
+  }
+
+  // const user = await User.findById(id).select("-password");
+  // if (!user) {
+  //   return res.status(400).json({ msg: "Invalid user" });
+  // }
+
+  // user.firstName = firstName
+  // user.lastName = lastName
+
+  // await user.save()
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    { firstName, lastName },
+    { new: true }
+  ).select("-password");
+  if (!user) {
+    return res.status(400).json({ msg: "Invalid user" });
+  }
+
+  res.status(200).json({ user, msg: "Updated successfully" });
+};
+
+export { getUser, getAllUsers, updateUser, adminGetUser };

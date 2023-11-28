@@ -1,0 +1,38 @@
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
+
+const jwtSecret = process.env.JWT_SECRET;
+
+const isLogin = async (req, res, next) => {
+  const { accessToken } = req.signedCookies;
+  console.log(accessToken);
+
+  if (accessToken) {
+    try {
+      const payload = jwt.verify(accessToken, jwtSecret);
+
+      req.user = await User.findById(payload._id).select("-password");
+      if (!req.user) {
+        throw new Error("Invalid user account");
+      }
+
+      next();
+    } catch (error) {
+      console.error(error);
+      return res.status(401).json({ msg: "Please login to continue" });
+    }
+  } else {
+    res.status(401).json({ msg: "Please login to continue" });
+  }
+};
+
+const isAdmin = async (req, res, next) => {
+  console.log(req.user);
+  if (req.user && req.user.isAdmin) {
+    next();
+  } else {
+    res.status(401).json({ msg: "Unauthorized" });
+  }
+};
+
+export { isLogin, isAdmin };

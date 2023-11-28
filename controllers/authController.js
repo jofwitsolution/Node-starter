@@ -41,9 +41,25 @@ const signin = async (req, res) => {
     name: `${user.firstName} ${user.lastName}`,
   };
 
+  let isSecureCookie = false;
+  let sameSiteCookie = "Lax";
+  if (process.env.NODE_ENV === "production") {
+    isSecureCookie = true;
+    sameSiteCookie = "None";
+  }
   const token = genJWT(payload);
 
-  res.json({ token, msg: "Login succeccful" });
+  const oneDay = 1000 * 60 * 60 * 24;
+
+  res.cookie("accessToken", token, {
+    httpOnly: true,
+    secure: isSecureCookie,
+    signed: true,
+    expires: new Date(Date.now() + oneDay),
+    sameSite: sameSiteCookie,
+  });
+
+  res.json({ msg: "Login succeccful" });
 };
 
 // @description: User signup
@@ -92,7 +108,9 @@ const signup = async (req, res) => {
 
   await sendActivationLink({ email, lastName, activationToken });
 
-  res.status(201).json({ msg: "Sign up successful" });
+  res
+    .status(201)
+    .json({ msg: "An email has been sent to activate your account" });
 };
 
 // @description: User activate
