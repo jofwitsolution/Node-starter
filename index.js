@@ -1,9 +1,11 @@
 import dotenv from "dotenv";
+import "express-async-errors";
 import express from "express";
 import cookieParser from "cookie-parser";
 import connectDB from "./lib/db.js";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
+import { errorHandler, notFound } from "./middleware/errorMiddleware.js";
 
 dotenv.config();
 const app = express();
@@ -19,6 +21,9 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+
+app.use(errorHandler);
+app.use(notFound);
 
 const port = process.env.PORT || 5000;
 

@@ -90,3 +90,6 @@ const adminDeleteUser = async (req, res) => {
 };
 
 export { getUser, getAllUsers, updateUser, adminGetUser, adminDeleteUser };
+
+// Handling error in expressjs
+// Forgot password

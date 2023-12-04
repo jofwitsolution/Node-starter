@@ -1,12 +1,16 @@
 import bcryptjs from "bcryptjs";
+import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 import {
   validateSignin,
   validateSignup,
 } from "../lib/validations/userValidation.js";
 import { genJWT } from "../lib/helpers/jwt.js";
-import { generateUniqueChars } from "../lib/utils.js";
-import { sendActivationLink } from "../lib/nodemailer/activationEmail.js";
+import { genRandomDigits, generateUniqueChars } from "../lib/utils.js";
+import {
+  sendActivationLink,
+  sendPasswordRecCode,
+} from "../lib/nodemailer/activationEmail.js";
 
 // @description: User signin
 // @Method: POST
@@ -139,4 +143,89 @@ const activate = async (req, res) => {
   res.status(200).json({ msg: "Account activated successfully" });
 };
 
-export { signin, signup, activate };
+// @description: Forgot password
+// @Method: POST
+// @Endpoint: api/auth/forgot-password
+// @AccessType: public
+const forgotPassword = async (req, res) => {
+  const email = req.body.email;
+
+  // Find the user
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(400).json({ msg: "Email doesn't exist" });
+  }
+
+  const code = genRandomDigits(6);
+
+  console.log(code);
+
+  user.passwordRecCode = code;
+  user.passwordRecCodeExpires = Date.now() + 300_000; // 5 minutes
+
+  await user.save();
+
+  await sendPasswordRecCode({ email, code });
+
+  res.status(200).json({ msg: "Password recovery code sent to your email" });
+};
+
+// @description: Forgot password code
+// @Method: POST
+// @Endpoint: api/auth/forgot-password/verify-code
+// @AccessType: public
+const forgotPasswordCode = async (req, res) => {
+  const code = req.body.code;
+
+  // Find the user
+  const user = await User.findOne({ passwordRecCode: code });
+  if (!user) {
+    return res.status(400).json({ msg: "Invalid recovery code" });
+  }
+
+  if (Date.now() > user.passwordRecCodeExpires) {
+    return res.status(400).json({ msg: "Recovery code expired" });
+  }
+
+  const accessToken = genJWT({ email: user.email });
+
+  user.passwordRecCode = undefined;
+  user.passwordRecCodeExpires = undefined;
+
+  await user.save();
+
+  res.status(200).json({ msg: "Code verified", accessToken });
+};
+
+// @description: Reset Password
+// @Method: POST
+// @Endpoint: api/auth/reset-password
+// @AccessType: public
+const resetPassword = async (req, res) => {
+  const password = req.body.password;
+
+  const payload = jwt.verify(req.body.accessToken, process.env.JWT_SECRET);
+
+  // Find the user
+  const user = await User.findOne({ email: payload.email });
+  if (!user) {
+    return res.status(400).json({ msg: "Invalid token" });
+  }
+
+  // Hash the password
+  const salt = await bcryptjs.genSalt(10);
+  const hashedPassword = await bcryptjs.hash(password, salt);
+  user.password = hashedPassword;
+  await user.save();
+
+  res.status(200).json({ msg: "Password reset successful" });
+};
+
+export {
+  signin,
+  signup,
+  activate,
+  forgotPassword,
+  forgotPasswordCode,
+  resetPassword,
+};

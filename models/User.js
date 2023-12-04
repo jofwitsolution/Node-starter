@@ -47,6 +47,8 @@ const userSchema = new mongoose.Schema({
   },
   activationToken: String,
   activationTokenExpires: String,
+  passwordRecCode: String,
+  passwordRecCodeExpires: String,
 });
 
 const User = mongoose.model("User", userSchema);
