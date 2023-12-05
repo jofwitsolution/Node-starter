@@ -2,6 +2,8 @@ import dotenv from "dotenv";
 import "express-async-errors";
 import express from "express";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
+import compression from "compression";
 import connectDB from "./lib/db.js";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/user.js";
@@ -24,6 +26,15 @@ app.use("/api/users", userRoutes);
 
 app.use(errorHandler);
 app.use(notFound);
+
+// Helmet for security purposes. Compression for efficiency
+app.use(helmet());
+app.use(
+  compression({
+    level: 6,
+    threshold: 0,
+  })
+);
 
 const port = process.env.PORT || 5000;
 

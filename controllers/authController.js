@@ -221,6 +221,19 @@ const resetPassword = async (req, res) => {
   res.status(200).json({ msg: "Password reset successful" });
 };
 
+// @description: Logout
+// @Method: GET
+// @Endpoint: api/auth/logout
+// @AccessType: private
+const logout = async (req, res) => {
+  res.cookie("accessToken", "logout", {
+    httpOnly: true,
+    expires: new Date(Date.now()),
+  });
+
+  res.status(200).json({ msg: "Successfully logged out" });
+};
+
 export {
   signin,
   signup,
@@ -228,4 +241,5 @@ export {
   forgotPassword,
   forgotPasswordCode,
   resetPassword,
+  logout,
 };
